@@ -3,7 +3,7 @@ import mediapipe as mp
 import time
 import asyncio
 import websockets
-import json  # Para enviar dados no formato JSON
+import json
 
 class handDetector():
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5, trackCon=0.5):
@@ -58,7 +58,6 @@ async def hand_tracking_server(websocket):
         lmList = detector.findPosition(img)
 
         if len(lmList) != 0:
-            # Simulação de dados: cada bone recebe um head e tail
             bone_data = {
                 "0-1": {
                     "head": {"x": lmList[1]["x"], "y": lmList[1]["y"], "z": 0},
@@ -142,8 +141,7 @@ async def hand_tracking_server(websocket):
                 },
             }
             await websocket.send(json.dumps(bone_data))
-
-        # Exibir vídeo
+            
         cv2.imshow("Image", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -156,10 +154,10 @@ async def hand_tracking_server(websocket):
 async def main():
     async with websockets.serve(hand_tracking_server, "localhost", 8765):
         print("WebSocket server started on ws://localhost:8765")
-        await asyncio.Future()  # Mantém o servidor ativo
+        await asyncio.Future()
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())  # Usa asyncio.run para gerenciar o loop de eventos
+        asyncio.run(main())
     except KeyboardInterrupt:
         print("Server stopped.")
