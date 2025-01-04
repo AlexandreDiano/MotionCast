@@ -17,7 +17,6 @@ function ThreeScene() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
 
-    // Luzes
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
@@ -25,22 +24,19 @@ function ThreeScene() {
     directionalLight.position.set(5, 10, 7.5);
     scene.add(directionalLight);
 
-    // Carregar modelo
     const loader = new GLTFLoader();
-    let handBones = {}; // Armazenar referências aos ossos
+    let handBones = {};
     loader.load(
-      "/RiggedHand.glb", // Substitua pelo caminho do seu modelo
+      "/RiggedHand.glb",
       (gltf) => {
         const model = gltf.scene;
         scene.add(model);
 
-        // Centralizar o modelo
         const box = new THREE.Box3().setFromObject(model);
         const center = new THREE.Vector3();
         box.getCenter(center);
         model.position.sub(center);
 
-        // Mapear ossos pelo nome
         const boneNames = [
           "0-1",
           "1-2",
@@ -80,8 +76,7 @@ function ThreeScene() {
       },
     );
 
-    // Configuração inicial da câmera
-    camera.position.set(0, 1, 3);
+    camera.position.set(0, 1, 5);
     camera.lookAt(0, 0, 0);
 
     const animate = () => {
@@ -91,7 +86,6 @@ function ThreeScene() {
 
     animate();
 
-    // WebSocket para atualizações em tempo real
     const socket = new WebSocket("ws://localhost:8765");
 
     socket.onopen = () => {
@@ -104,19 +98,16 @@ function ThreeScene() {
 
         console.log("data", data);
 
-        // Atualizar ossos com base nos dados recebidos
         Object.keys(data).forEach((boneName) => {
           const bone = handBones[boneName];
           if (bone) {
             const head = data[boneName].head;
             const tail = data[boneName].tail;
 
-            // Calcular vetor de direção
             const dx = tail.x - head.x;
             const dy = tail.y - head.y;
             const dz = tail.z - head.z;
 
-            // Normalizar vetor
             const magnitude = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (magnitude === 0) return;
 
@@ -124,12 +115,10 @@ function ThreeScene() {
             const normalizedDy = dy / magnitude;
             const normalizedDz = dz / magnitude;
 
-            // Calcular ângulos de rotação
             const angleX = Math.atan2(normalizedDy, normalizedDz);
             const angleY = Math.atan2(normalizedDx, normalizedDz);
-
-            // Limitar ângulos para evitar deformações
-            const maxAngle = Math.PI / 4; // Limite de 45 graus
+            
+            const maxAngle = Math.PI / 4; 
             const minAngle = -Math.PI / 4;
 
             const limitedAngleX = Math.max(
@@ -141,14 +130,11 @@ function ThreeScene() {
               Math.min(maxAngle, angleY),
             );
 
-            // Resetar rotação antes de aplicar novos valores
             bone.rotation.set(0, 0, 0);
 
-            // Aplicar rotação
             bone.position.x = limitedAngleX;
             bone.position.y = limitedAngleY;
 
-            // Forçar atualização da matriz mundial
             bone.updateMatrixWorld(true);
           }
           console.log("bone", bone);
@@ -166,7 +152,6 @@ function ThreeScene() {
       console.log("Conexão WebSocket fechada.");
     };
 
-    // Cleanup
     return () => {
       mountRef.current.removeChild(renderer.domElement);
       renderer.dispose();
